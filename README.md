@@ -18,6 +18,7 @@ This is small application designed to keep me informed about the latest news and
   - Grafana Cloud:
     - [x] Support receiver to remote write metrics to Prometheus
     - [x] Visualize to dashboard
+  - [x] Slack Incoming Webhook
 
 ## Get started
 

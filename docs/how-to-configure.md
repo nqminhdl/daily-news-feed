@@ -50,7 +50,7 @@ positionConfig:
 #### categories
 
 ```yaml
-# Define category with delivery channel. Supported channel telegram, prometheus
+# Define category with delivery channel. Supported channel telegram, prometheus, slack
 # Replace category_name with you category
 categories:
   [<string>]:
@@ -64,6 +64,9 @@ categories:
       baicAuth:
         username: <string>
         password: <string>
+    slack:
+      enabled: <boolean>
+      webhookUrl: <string>
     feeds: [list of key value> | default = []]
 ```
 
@@ -95,6 +98,9 @@ categories:
       baicAuth:
         username: ${GRAFANA_CLOUD_METRIC_USER}
         password: ${GRAFANA_CLOUD_METRIC_TOKEN}
+    slack:
+      enabled: true
+      webhookUrl: ${SLACK_WEBHOOK_URL}
     feeds:
       - name: Kubernetes Blog
         url: https://kubernetes.io/feed.xml

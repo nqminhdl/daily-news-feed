@@ -27,4 +27,13 @@ func SendNotification(config *config.Category, category string, title string, li
 			link,
 		)
 	}
+
+	if config.Slack.Enabled {
+		log.Printf("Slack is enabled, sending %s.\n", link)
+		sendSlackMessage(
+			config.Slack.WebhookUrlUrl,
+			title,
+			link,
+		)
+	}
 }
