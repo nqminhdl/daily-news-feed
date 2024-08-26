@@ -3,6 +3,7 @@ package handler
 import (
 	"log"
 	"strconv"
+	"time"
 
 	backend "daily-news-feed/pkg/backend"
 	config "daily-news-feed/pkg/config"
@@ -29,7 +30,12 @@ func FeedHandler() {
 
 			for _, item := range parsedURL.Items {
 				log.Printf("Checking backend for item: %s", item.Title)
-				pubDate := strconv.FormatInt(item.PublishedParsed.Unix(), 10)
+				var pubDate string
+				if item.PublishedParsed != nil {
+					pubDate = strconv.FormatInt(item.PublishedParsed.Unix(), 10)
+				} else {
+					pubDate = strconv.FormatInt(time.Now().Unix(), 10)
+				}
 				switch backendConfig.Backend {
 				case `filesystem`:
 					linkFound := backend.FsDataWriting(backendConfig.Filesystem.Path, item.Title, item.Link, pubDate)
