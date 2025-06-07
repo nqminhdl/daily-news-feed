@@ -2,12 +2,15 @@ package receiver
 
 import (
 	"daily-news-feed/pkg/config"
-	"log"
+
+	util "daily-news-feed/pkg/util"
 )
 
 func SendNotification(config *config.Category, category string, title string, link string, pubDate string) {
+	logger := util.Logger()
+
 	if config.Prometheus.Enabled {
-		log.Printf("Prometheus is enabled, produce metrics to %s.\n", config.Prometheus.Url)
+		logger.Infof("Prometheus is enabled, produce metrics to %s.\n", config.Prometheus.Url)
 		produceMetricsToPrometheus(
 			config.Prometheus.BasicAuth.Username,
 			config.Prometheus.BasicAuth.Password,
@@ -20,7 +23,7 @@ func SendNotification(config *config.Category, category string, title string, li
 	}
 
 	if config.Telegram.Enabled {
-		log.Printf("Telegram is enabled, send %s to channel ID%s.\n", link, config.Telegram.ChatID)
+		logger.Infof("Telegram is enabled, send %s to channel ID%s.\n", link, config.Telegram.ChatID)
 		sendTelegramMessage(
 			config.Telegram.BotToken,
 			config.Telegram.ChatID,
@@ -29,7 +32,7 @@ func SendNotification(config *config.Category, category string, title string, li
 	}
 
 	if config.Slack.Enabled {
-		log.Printf("Slack is enabled, sending %s.\n", link)
+		logger.Infof("Slack is enabled, sending %s.\n", link)
 		sendSlackMessage(
 			config.Slack.WebhookUrlUrl,
 			title,

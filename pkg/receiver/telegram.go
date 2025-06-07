@@ -5,15 +5,18 @@ import (
 	"net/http"
 	"os"
 	"time"
+
+	util "daily-news-feed/pkg/util"
 )
 
 func sendTelegramMessage(botToken string, chatId string, url string) error {
+	logger := util.Logger()
 	if botToken == "" {
 		return fmt.Errorf("telegram bot token is not set")
 	}
 
 	if chatId == "" {
-		return fmt.Errorf("telegram bot token is not defined")
+		return fmt.Errorf("telegram chat id is not defined")
 	}
 
 	baseURL := os.Getenv("TELEGRAM_BASE_URL")
@@ -39,7 +42,7 @@ func sendTelegramMessage(botToken string, chatId string, url string) error {
 	time.Sleep(2 * time.Second)
 
 	if response.StatusCode != http.StatusOK {
-		fmt.Print(response.StatusCode)
+		logger.Infof("unexpected status code: %d", response.StatusCode)
 		return fmt.Errorf("unexpected status code: %d", response.StatusCode)
 	}
 

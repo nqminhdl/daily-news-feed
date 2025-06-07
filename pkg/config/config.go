@@ -1,9 +1,9 @@
 package config
 
 import (
-	"fmt"
-	"log"
 	"os"
+
+	util "daily-news-feed/pkg/util"
 
 	"gopkg.in/yaml.v3"
 )
@@ -71,9 +71,10 @@ type Feed struct {
 }
 
 func ReadConfig() Config {
+	logger := util.Logger()
 	data, err := os.ReadFile("config.yaml")
 	if err != nil {
-		log.Fatalf("error reading YAML file: %v", err)
+		logger.Fatalf("error reading YAML file: %v", err)
 	}
 
 	expandedYAML := os.ExpandEnv(string(data))
@@ -82,7 +83,7 @@ func ReadConfig() Config {
 	var config Config
 	err = yaml.Unmarshal([]byte(expandedYAML), &config)
 	if err != nil {
-		fmt.Printf("Error unmarshalling YAML: %s\n", err)
+		logger.Fatalf("Error unmarshalling YAML: %s\n", err)
 	}
 
 	return config

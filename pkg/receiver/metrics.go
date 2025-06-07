@@ -4,9 +4,10 @@ import (
 	"bytes"
 	"encoding/base64"
 	"fmt"
-	"log"
 	"net/http"
 	"time"
+
+	util "daily-news-feed/pkg/util"
 
 	"github.com/gogo/protobuf/proto"
 	"github.com/golang/snappy"
@@ -76,6 +77,8 @@ func createTimeSeries(metricName string, value float64, labels map[string]string
 }
 
 func produceMetricsToPrometheus(username string, password string, prometheusURL string, category string, title string, url string, pubDate string) {
+	logger := util.Logger()
+
 	headers := map[string]string{
 		"Authorization":                     "Basic " + basicAuth(username, password),
 		"Content-Type":                      "application/x-protobuf",
@@ -110,15 +113,15 @@ func produceMetricsToPrometheus(username string, password string, prometheusURL 
 	// Marshal and compress the request
 	data, err := proto.Marshal(writeRequest)
 	if err != nil {
-		log.Fatalf("failed to marshal write request: %v", err)
+		logger.Fatalf("failed to marshal write request: %v", err)
 	}
 	compressed := snappy.Encode(nil, data)
 
 	// Write metrics
 	err = handler.WriteMetrics(compressed)
 	if err != nil {
-		log.Fatalf("failed to write metrics with status: %v", err)
+		logger.Fatalf("failed to write metrics with status: %v", err)
 	}
 
-	log.Println("Metrics written to remote Prometheus server successfully")
+	logger.Info("Metrics written to remote Prometheus server successfully")
 }
