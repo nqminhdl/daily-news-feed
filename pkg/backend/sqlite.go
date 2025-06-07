@@ -1,7 +1,7 @@
 package backend
 
 import (
-	"log"
+	util "daily-news-feed/pkg/util"
 
 	"gorm.io/driver/sqlite"
 	"gorm.io/gorm"
@@ -15,6 +15,7 @@ type SQLiteData struct {
 }
 
 func SQLiteWriting(filename string, name string, link string, pubDate string) (bool, error) {
+	logger := util.Logger()
 	db, err := gorm.Open(sqlite.Open(filename), &gorm.Config{})
 	if err != nil {
 		panic("failed to connect database")
@@ -37,16 +38,16 @@ func SQLiteWriting(filename string, name string, link string, pubDate string) (b
 	if result.Error != nil {
 		if result.Error == gorm.ErrRecordNotFound {
 			if err := db.Create(&newPosition).Error; err != nil {
-				log.Printf("Failed to insert new position '%s': %v", link, err)
+				logger.Errorf("Failed to insert new position '%s': %v", link, err)
 				return linkFound, err
 			}
-			log.Printf("New position '%s' added to the database", link)
+			logger.Infof("New position '%s' added to the database", link)
 		} else {
-			log.Printf("Error querying the database for position '%s': %v", link, result.Error)
+			logger.Errorf("Error querying the database for position '%s': %v", link, result.Error)
 			return linkFound, result.Error
 		}
 	} else {
-		log.Printf("Position '%s' is already in the list", link)
+		logger.Infof("Position '%s' is already in the list", link)
 		linkFound = true
 	}
 

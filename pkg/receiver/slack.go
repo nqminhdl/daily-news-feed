@@ -4,24 +4,26 @@ import (
 	"bytes"
 	"encoding/json"
 	"fmt"
-	"log"
 	"net/http"
 	"strconv"
 	"time"
+
+	util "daily-news-feed/pkg/util"
 )
 
 func sendSlackMessage(slackWebhookUrl string, title string, url string) error {
+	logger := util.Logger()
 	message := fmt.Sprintf("%s\n%s", title, url)
 
 	payload := map[string]string{"text": message}
 	jsonStr, err := json.Marshal(payload)
 	if err != nil {
-		log.Fatalf("client: could not marshal payload: %s\n", err)
+		logger.Fatalf("client: could not marshal payload: %s\n", err)
 	}
 
 	req, err := http.NewRequest(http.MethodPost, slackWebhookUrl, bytes.NewBuffer(jsonStr))
 	if err != nil {
-		log.Fatalf("client: could not create request: %s\n", err)
+		logger.Fatalf("client: could not create request: %s\n", err)
 	}
 	req.Header.Set("Content-Type", "application/json")
 
@@ -40,6 +42,6 @@ func sendSlackMessage(slackWebhookUrl string, title string, url string) error {
 		return fmt.Errorf("fail to send message to Slack. Reponse code %s. Response message: %s", strconv.Itoa(res.StatusCode), res.Body)
 	}
 
-	log.Println("Message successfully sent to Slack")
+	logger.Info("Message successfully sent to Slack")
 	return nil
 }

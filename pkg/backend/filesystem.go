@@ -1,9 +1,10 @@
 package backend
 
 import (
-	"log"
 	"os"
 	"strconv"
+
+	util "daily-news-feed/pkg/util"
 
 	"gopkg.in/yaml.v3"
 )
@@ -19,25 +20,27 @@ type FSPositionData struct {
 }
 
 func verfifyYaml(filename string) FSPositionData {
+	logger := util.Logger()
 	data, err := os.ReadFile(filename)
 	if err != nil {
-		log.Fatalf("error reading YAML file: %v", err)
+		logger.Errorf("error reading YAML file: %v", err)
 	}
 
 	var fsPositionData FSPositionData
 	err = yaml.Unmarshal(data, &fsPositionData)
 	if err != nil {
-		log.Fatalf("error unmarshalling YAML: %v", err)
+		logger.Errorf("error unmarshalling YAML: %v", err)
 	}
 	return fsPositionData
 }
 
 func FsDataWriting(filename string, name string, link string, pubDate string) bool {
+	logger := util.Logger()
 	fileName := filename
 
 	file, err := os.OpenFile(fileName, os.O_RDWR|os.O_CREATE, 0644)
 	if err != nil {
-		log.Fatalf("error opening or creating YAML file: %v", err)
+		logger.Error("error opening or creating YAML file: %v", err)
 	}
 	defer file.Close()
 
@@ -46,7 +49,7 @@ func FsDataWriting(filename string, name string, link string, pubDate string) bo
 	linkFound := false
 	for _, position := range positionConfig.Positions {
 		if position.Link == link {
-			log.Printf("Position '%s' is already in the list", position.Name)
+			logger.Info("Position '%s' is already in the list", position.Name)
 			linkFound = true
 			break
 		}
@@ -63,17 +66,17 @@ func FsDataWriting(filename string, name string, link string, pubDate string) bo
 		PubDate: pubDateInt,
 	}
 
-	log.Printf("Position '%s' is not in the list. Writing date to position file.", newPosition.Name)
+	logger.Infof("Position '%s' is not in the list. Writing date to position file.", newPosition.Name)
 	positionConfig.Positions = append(positionConfig.Positions, newPosition)
 
 	updateYaml, err := yaml.Marshal(&positionConfig)
 	if err != nil {
-		log.Fatalf("error marshalling YAML: %v", err)
+		logger.Errorf("error marshalling YAML: %v", err)
 	}
 
 	err = os.WriteFile(fileName, updateYaml, 0644)
 	if err != nil {
-		log.Fatalf("error writing YAML file: %v", err)
+		logger.Errorf("error writing YAML file: %v", err)
 	}
 
 	return linkFound

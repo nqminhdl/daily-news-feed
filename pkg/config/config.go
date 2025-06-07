@@ -1,15 +1,16 @@
 package config
 
 import (
-	"fmt"
-	"log"
 	"os"
+
+	util "daily-news-feed/pkg/util"
 
 	"gopkg.in/yaml.v3"
 )
 
 type Config struct {
 	Categories     map[string]Category `yaml:"categories"`
+	FeedConfig     FeedConfig          `yaml:"feedConfig"`
 	PositionConfig struct {
 		Backend    string `yaml:"backend"`
 		Filesystem struct {
@@ -44,6 +45,10 @@ type Config struct {
 	} `yaml:"positionConfig"`
 }
 
+type FeedConfig struct {
+	MaxAgeInDays int `yaml:"maxAgeInDays"` // Maximum age of feed items to fetch in days, defaults to 30 if not specified
+}
+
 type Category struct {
 	Telegram struct {
 		Enabled  bool   `yaml:"enabled"`
@@ -71,9 +76,10 @@ type Feed struct {
 }
 
 func ReadConfig() Config {
+	logger := util.Logger()
 	data, err := os.ReadFile("config.yaml")
 	if err != nil {
-		log.Fatalf("error reading YAML file: %v", err)
+		logger.Fatalf("error reading YAML file: %v", err)
 	}
 
 	expandedYAML := os.ExpandEnv(string(data))
@@ -82,7 +88,7 @@ func ReadConfig() Config {
 	var config Config
 	err = yaml.Unmarshal([]byte(expandedYAML), &config)
 	if err != nil {
-		fmt.Printf("Error unmarshalling YAML: %s\n", err)
+		logger.Fatalf("Error unmarshalling YAML: %s\n", err)
 	}
 
 	return config

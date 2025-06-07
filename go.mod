@@ -7,6 +7,7 @@ require (
 	github.com/golang/snappy v0.0.4
 	github.com/mmcdole/gofeed v1.3.0
 	github.com/prometheus/prometheus v0.53.1
+	github.com/sirupsen/logrus v1.9.3
 	gopkg.in/yaml.v3 v3.0.1
 	gorm.io/driver/sqlite v1.5.6
 	gorm.io/gorm v1.25.10
@@ -25,6 +26,7 @@ require (
 	github.com/modern-go/reflect2 v1.0.2 // indirect
 	github.com/rogpeppe/go-internal v1.12.0 // indirect
 	golang.org/x/net v0.26.0 // indirect
+	golang.org/x/sys v0.21.0 // indirect
 	golang.org/x/text v0.16.0 // indirect
 	gopkg.in/check.v1 v1.0.0-20201130134442-10cb98267c6c // indirect
 )
