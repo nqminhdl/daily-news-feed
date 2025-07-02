@@ -10,6 +10,7 @@ import (
 
 type Config struct {
 	Categories     map[string]Category `yaml:"categories"`
+	FeedConfig     FeedConfig          `yaml:"feedConfig"`
 	PositionConfig struct {
 		Backend    string `yaml:"backend"`
 		Filesystem struct {
@@ -42,6 +43,10 @@ type Config struct {
 			Database string `yaml:"database"`
 		} `yaml:"redis"`
 	} `yaml:"positionConfig"`
+}
+
+type FeedConfig struct {
+	MaxAgeDays int `yaml:"maxAgeDays"` // Maximum age of feed items in days (default: 30)
 }
 
 type Category struct {
@@ -84,6 +89,11 @@ func ReadConfig() Config {
 	err = yaml.Unmarshal([]byte(expandedYAML), &config)
 	if err != nil {
 		logger.Fatalf("Error unmarshalling YAML: %s\n", err)
+	}
+
+	// Set default values if not specified
+	if config.FeedConfig.MaxAgeDays <= 0 {
+		config.FeedConfig.MaxAgeDays = 30 // Default to 30 days (1 month)
 	}
 
 	return config

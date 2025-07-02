@@ -5,6 +5,7 @@
     - [Generic placeholders](#generic-placeholders)
     - [Use environment variables in the configuration](#use-environment-variables-in-the-configuration)
     - [Configuration parameters](#configuration-parameters)
+      - [feedConfig](#feedconfig)
       - [positionConfig](#positionconfig)
       - [categories](#categories)
       - [feeds\_config](#feeds_config)
@@ -29,6 +30,17 @@ Each variable reference is replaced at startup by the value of the environment v
 To specify a default value, use `${VAR}`.
 
 ### Configuration parameters
+
+#### feedConfig
+
+```yaml
+# Feed processing configuration
+feedConfig:
+  # Maximum age of feed items to process in days
+  # Items older than this will be skipped
+  # Default: 30 days if not specified
+  maxAgeDays: <int>
+```
 
 #### positionConfig
 
@@ -80,6 +92,10 @@ url: <url>
 # Example config
 
 ```yaml
+# Feed processing configuration
+feedConfig:
+  maxAgeDays: 30  # Only process feed items published within the last 30 days
+
 positionConfig:
   backend: filesystem
 
