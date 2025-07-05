@@ -3,7 +3,7 @@ package config
 import (
 	"os"
 
-	util "daily-news-feed/pkg/util"
+	"daily-news-feed/pkg/util"
 
 	"gopkg.in/yaml.v3"
 )

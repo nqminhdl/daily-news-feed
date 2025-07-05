@@ -6,17 +6,19 @@ import (
 	"os"
 	"time"
 
-	util "daily-news-feed/pkg/util"
+	"daily-news-feed/pkg/util"
 )
 
 func sendTelegramMessage(botToken string, chatId string, url string) error {
 	logger := util.Logger()
 	if botToken == "" {
-		return fmt.Errorf("telegram bot token is not set")
+		logger.Error("Telegram bot token is not set")
+		return nil
 	}
 
 	if chatId == "" {
-		return fmt.Errorf("telegram chat id is not defined")
+		logger.Error("Telegram chat ID is not defined")
+		return nil
 	}
 
 	baseURL := os.Getenv("TELEGRAM_BASE_URL")
@@ -28,12 +30,16 @@ func sendTelegramMessage(botToken string, chatId string, url string) error {
 
 	req, err := http.NewRequest("GET", sendMessageURL, nil)
 	if err != nil {
+		logger.Errorf("Failed to create request: %v", err)
 		return err
 	}
 
-	client := &http.Client{}
+	client := &http.Client{
+		Timeout: 5 * time.Second,
+	}
 	response, err := client.Do(req)
 	if err != nil {
+		logger.Errorf("Failed to send request: %v", err)
 		return err
 	}
 	defer response.Body.Close()
@@ -42,9 +48,10 @@ func sendTelegramMessage(botToken string, chatId string, url string) error {
 	time.Sleep(2 * time.Second)
 
 	if response.StatusCode != http.StatusOK {
-		logger.Infof("unexpected status code: %d", response.StatusCode)
-		return fmt.Errorf("unexpected status code: %d", response.StatusCode)
+		logger.Errorf("Unexpected status code: %d", response.StatusCode)
+		return err
 	}
 
+	logger.Debugf("Message sent to Telegram successfully: %s", url)
 	return nil
 }

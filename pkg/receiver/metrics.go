@@ -3,11 +3,10 @@ package receiver
 import (
 	"bytes"
 	"encoding/base64"
-	"fmt"
 	"net/http"
 	"time"
 
-	util "daily-news-feed/pkg/util"
+	"daily-news-feed/pkg/util"
 
 	"github.com/gogo/protobuf/proto"
 	"github.com/golang/snappy"
@@ -26,8 +25,10 @@ func basicAuth(username, password string) string {
 }
 
 func (r *RemoteWriteHandler) WriteMetrics(data []byte) error {
+	logger := util.Logger()
 	req, err := http.NewRequest("POST", r.url, bytes.NewBuffer(data))
 	if err != nil {
+		logger.Errorf("Failed to create request: %v", err)
 		return err
 	}
 	for key, value := range r.headers {
@@ -37,12 +38,14 @@ func (r *RemoteWriteHandler) WriteMetrics(data []byte) error {
 	time.Sleep(1 * time.Second)
 	resp, err := r.client.Do(req)
 	if err != nil {
+		logger.Errorf("Failed to send request: %v", err)
 		return err
 	}
 	defer resp.Body.Close()
 
 	if resp.StatusCode != http.StatusOK {
-		return fmt.Errorf(resp.Status)
+		logger.Errorf("Unexpected status code: %s", resp.Status)
+		return err
 	}
 
 	return nil
@@ -76,8 +79,12 @@ func createTimeSeries(metricName string, value float64, labels map[string]string
 	}
 }
 
-func produceMetricsToPrometheus(username string, password string, prometheusURL string, category string, title string, url string, pubDate string) {
+func produceMetricsToPrometheus(username string, password string, prometheusURL string, category string, title string, url string, pubDate string) error {
 	logger := util.Logger()
+	if prometheusURL == "" {
+		logger.Error("Prometheus URL is not set")
+		return nil
+	}
 
 	headers := map[string]string{
 		"Authorization":                     "Basic " + basicAuth(username, password),
@@ -113,15 +120,17 @@ func produceMetricsToPrometheus(username string, password string, prometheusURL 
 	// Marshal and compress the request
 	data, err := proto.Marshal(writeRequest)
 	if err != nil {
-		logger.Fatalf("failed to marshal write request: %v", err)
+		logger.Errorf("Failed to marshal write request: %v", err)
+		return err
 	}
 	compressed := snappy.Encode(nil, data)
 
 	// Write metrics
-	err = handler.WriteMetrics(compressed)
-	if err != nil {
-		logger.Fatalf("failed to write metrics with status: %v", err)
+	if err := handler.WriteMetrics(compressed); err != nil {
+		logger.Errorf("Failed to write metrics: %v", err)
+		return err
 	}
 
-	logger.Info("Metrics written to remote Prometheus server successfully")
+	logger.Debugf("Metrics written successfully for %s", title)
+	return nil
 }

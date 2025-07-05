@@ -4,13 +4,12 @@ import (
 	"strconv"
 	"time"
 
-	util "daily-news-feed/pkg/util"
-
-	backend "daily-news-feed/pkg/backend"
-	config "daily-news-feed/pkg/config"
-	receiver "daily-news-feed/pkg/receiver"
-
 	"github.com/mmcdole/gofeed"
+
+	"daily-news-feed/pkg/backend"
+	"daily-news-feed/pkg/config"
+	"daily-news-feed/pkg/receiver"
+	"daily-news-feed/pkg/util"
 )
 
 func FeedHandler() {
@@ -31,11 +30,12 @@ func FeedHandler() {
 
 	for name, config := range categories {
 		for _, feed := range config.Feed {
-			logger.Infof("Parsing Links - Category %s - %s", name, feed.Name)
+			logger.Infof("Parsing feed - Category: %s, Feed: %s", name, feed.Name)
 
 			parsedURL, err := fp.ParseURL(feed.URL)
 			if err != nil {
-				logger.Fatalf("error parsing URL: %v", err)
+				logger.Errorf("Failed to parse URL %s: %v", feed.URL, err)
+				continue // Skip this feed but continue with others
 			}
 
 			for _, item := range parsedURL.Items {
@@ -45,24 +45,42 @@ func FeedHandler() {
 					continue
 				}
 
-				logger.Infof("Processing item: %s", item.Title)
-				var pubDate string
-				if item.PublishedParsed != nil {
-					pubDate = strconv.FormatInt(item.PublishedParsed.Unix(), 10)
-				} else {
-					pubDate = strconv.FormatInt(time.Now().Unix(), 10)
+				logger.Debugf("Processing item: %s", item.Title)
+				pubDate := getPubDate(item)
+
+				exists, err := storeBackend(backendConfig.Backend, item.Title, item.Link, pubDate, backendConfig.Filesystem.Path, backendConfig.Sqlite.Path)
+				if err != nil {
+					logger.Errorf("Failed to store item %s: %v", item.Title, err)
+					continue
 				}
-				switch backendConfig.Backend {
-				case `filesystem`:
+
+				// Only send notification for new items
+				if !exists {
 					receiver.SendNotification(&config, name, item.Title, item.Link, pubDate)
-					backend.FsDataWriting(backendConfig.Filesystem.Path, item.Title, item.Link, pubDate)
-				case `sqlite`:
-					backend.SQLiteWriting(backendConfig.Sqlite.Path, item.Title, item.Link, pubDate)
-					receiver.SendNotification(&config, name, item.Title, item.Link, pubDate)
-				default:
-					logger.Errorf("Unhandled backend: %s", backendConfig.Backend)
 				}
 			}
 		}
+	}
+}
+
+// getPubDate returns the publication date as a Unix timestamp string
+func getPubDate(item *gofeed.Item) string {
+	if item.PublishedParsed != nil {
+		return strconv.FormatInt(item.PublishedParsed.Unix(), 10)
+	}
+	return strconv.FormatInt(time.Now().Unix(), 10)
+}
+
+// storeBackend stores an item in the configured backend
+func storeBackend(backendType, title, link, pubDate, fsPath, sqlitePath string) (bool, error) {
+	logger := util.Logger()
+	switch backendType {
+	case "filesystem":
+		return backend.FsDataWriting(fsPath, title, link, pubDate)
+	case "sqlite":
+		return backend.SQLiteWriting(sqlitePath, title, link, pubDate)
+	default:
+		logger.Errorf("unsupported backend type: %s", backendType)
+		return false, nil
 	}
 }
