@@ -4,26 +4,33 @@ import (
 	"bytes"
 	"encoding/json"
 	"fmt"
+	"io"
 	"net/http"
-	"strconv"
 	"time"
 
-	util "daily-news-feed/pkg/util"
+	"daily-news-feed/pkg/util"
 )
 
-func sendSlackMessage(slackWebhookUrl string, title string, url string) error {
+func sendSlackMessage(webhookURL string, title string, url string) error {
 	logger := util.Logger()
-	message := fmt.Sprintf("%s\n%s", title, url)
-
-	payload := map[string]string{"text": message}
-	jsonStr, err := json.Marshal(payload)
-	if err != nil {
-		logger.Fatalf("client: could not marshal payload: %s\n", err)
+	if webhookURL == "" {
+		logger.Error("Slack webhook URL is not set")
+		return nil
 	}
 
-	req, err := http.NewRequest(http.MethodPost, slackWebhookUrl, bytes.NewBuffer(jsonStr))
+	message := fmt.Sprintf("%s\n%s", title, url)
+	payload := map[string]string{"text": message}
+
+	jsonStr, err := json.Marshal(payload)
 	if err != nil {
-		logger.Fatalf("client: could not create request: %s\n", err)
+		logger.Errorf("Failed to marshal payload: %v", err)
+		return err
+	}
+
+	req, err := http.NewRequest(http.MethodPost, webhookURL, bytes.NewBuffer(jsonStr))
+	if err != nil {
+		logger.Errorf("Failed to create request: %v", err)
+		return err
 	}
 	req.Header.Set("Content-Type", "application/json")
 
@@ -33,15 +40,17 @@ func sendSlackMessage(slackWebhookUrl string, title string, url string) error {
 
 	res, err := client.Do(req)
 	if err != nil {
-		fmt.Printf("error making http request: %s\n", err)
+		logger.Errorf("Failed to send request: %v", err)
 		return err
 	}
 	defer res.Body.Close()
 
 	if res.StatusCode != http.StatusOK {
-		return fmt.Errorf("fail to send message to Slack. Reponse code %s. Response message: %s", strconv.Itoa(res.StatusCode), res.Body)
+		body, _ := io.ReadAll(res.Body)
+		logger.Errorf("Unexpected status code %d: %s", res.StatusCode, body)
+		return err
 	}
 
-	logger.Info("Message successfully sent to Slack")
+	logger.Debugf("Message sent to Slack successfully: %s", title)
 	return nil
 }

@@ -4,9 +4,9 @@ import (
 	"os"
 	"strconv"
 
-	util "daily-news-feed/pkg/util"
-
 	"gopkg.in/yaml.v3"
+
+	"daily-news-feed/pkg/util"
 )
 
 type FSData struct {
@@ -19,65 +19,79 @@ type FSPositionData struct {
 	Positions []FSData `yaml:"positions"`
 }
 
-func verfifyYaml(filename string) FSPositionData {
+func verifyYaml(filename string) (*FSPositionData, error) {
 	logger := util.Logger()
 	data, err := os.ReadFile(filename)
 	if err != nil {
-		logger.Errorf("error reading YAML file: %v", err)
+		if os.IsNotExist(err) {
+			return &FSPositionData{Positions: []FSData{}}, nil
+		}
+		logger.Errorf("Failed to read YAML file: %v", err)
+		return nil, err
 	}
 
 	var fsPositionData FSPositionData
-	err = yaml.Unmarshal(data, &fsPositionData)
-	if err != nil {
-		logger.Errorf("error unmarshalling YAML: %v", err)
+	if err := yaml.Unmarshal(data, &fsPositionData); err != nil {
+		logger.Errorf("Failed to unmarshal YAML: %v", err)
+		return nil, err
 	}
-	return fsPositionData
+
+	if fsPositionData.Positions == nil {
+		fsPositionData.Positions = []FSData{}
+	}
+
+	return &fsPositionData, nil
 }
 
-func FsDataWriting(filename string, name string, link string, pubDate string) bool {
+func FsDataWriting(filename string, name string, link string, pubDate string) (bool, error) {
 	logger := util.Logger()
-	fileName := filename
-
-	file, err := os.OpenFile(fileName, os.O_RDWR|os.O_CREATE, 0644)
+	file, err := os.OpenFile(filename, os.O_RDWR|os.O_CREATE, 0644)
 	if err != nil {
-		logger.Error("error opening or creating YAML file: %v", err)
+		logger.Errorf("Failed to open or create YAML file: %v", err)
+		return false, err
 	}
 	defer file.Close()
 
-	positionConfig := verfifyYaml(fileName)
+	positionConfig, err := verifyYaml(filename)
+	if err != nil {
+		return false, err
+	}
 
-	linkFound := false
+	// Check if link already exists
 	for _, position := range positionConfig.Positions {
 		if position.Link == link {
-			logger.Info("Position '%s' is already in the list", position.Name)
-			linkFound = true
-			break
+			logger.Debugf("Position '%s' already exists", position.Name)
+			return true, nil
 		}
 	}
 
-	if linkFound {
-		return linkFound
+	// Add new position
+	pubDateInt, err := strconv.ParseInt(pubDate, 10, 64)
+	if err != nil {
+		logger.Errorf("Failed to parse pubDate: %v", err)
+		return false, err
 	}
 
-	pubDateInt, _ := strconv.ParseInt(pubDate, 10, 32)
 	newPosition := FSData{
 		Name:    name,
 		Link:    link,
 		PubDate: pubDateInt,
 	}
 
-	logger.Infof("Position '%s' is not in the list. Writing date to position file.", newPosition.Name)
+	logger.Debugf("Adding new position '%s'", newPosition.Name)
 	positionConfig.Positions = append(positionConfig.Positions, newPosition)
 
-	updateYaml, err := yaml.Marshal(&positionConfig)
+	// Write updated data
+	updateYaml, err := yaml.Marshal(positionConfig)
 	if err != nil {
-		logger.Errorf("error marshalling YAML: %v", err)
+		logger.Errorf("Failed to marshal YAML: %v", err)
+		return false, err
 	}
 
-	err = os.WriteFile(fileName, updateYaml, 0644)
-	if err != nil {
-		logger.Errorf("error writing YAML file: %v", err)
+	if err := os.WriteFile(filename, updateYaml, 0644); err != nil {
+		logger.Errorf("Failed to write YAML file: %v", err)
+		return false, err
 	}
 
-	return linkFound
+	return false, nil // New item added
 }
