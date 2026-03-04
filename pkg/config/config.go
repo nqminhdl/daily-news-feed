@@ -64,8 +64,10 @@ type Category struct {
 		} `yaml:"baicAuth"`
 	} `yaml:"prometheus"`
 	Slack struct {
-		Enabled       bool   `yaml:"enabled"`
-		WebhookUrlUrl string `yaml:"webhookUrl"`
+		Enabled    bool   `yaml:"enabled"`
+		WebhookURL string `yaml:"webhookUrl"`
+		BotToken   string `yaml:"botToken"`
+		ChannelID  string `yaml:"channelId"`
 	} `yaml:"slack"`
 	Feed []Feed `yaml:"feeds"`
 }

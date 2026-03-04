@@ -67,6 +67,8 @@ categories:
     slack:
       enabled: <boolean>
       webhookUrl: <string>
+      botToken: <string> # optional, required with channelId for Slack enterprise channel
+      channelId: <string> # optional, required with botToken for Slack enterprise channel
     feeds: [list of key value> | default = []]
 ```
 
@@ -101,6 +103,8 @@ categories:
     slack:
       enabled: true
       webhookUrl: ${SLACK_WEBHOOK_URL}
+      botToken: ${SLACK_BOT_TOKEN}
+      channelId: ${SLACK_TECHNOLOGY_CHANNEL_ID}
     feeds:
       - name: Kubernetes Blog
         url: https://kubernetes.io/feed.xml

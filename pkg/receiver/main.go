@@ -34,7 +34,9 @@ func SendNotification(config *config.Category, category string, title string, li
 	if config.Slack.Enabled {
 		logger.Debugf("Slack is enabled, sending %s.\n", link)
 		sendSlackMessage(
-			config.Slack.WebhookUrlUrl,
+			config.Slack.WebhookURL,
+			config.Slack.BotToken,
+			config.Slack.ChannelID,
 			title,
 			link,
 		)

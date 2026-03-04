@@ -19,6 +19,7 @@ This is small application designed to keep me informed about the latest news and
     - [x] Support receiver to remote write metrics to Prometheus
     - [x] Visualize to dashboard
   - [x] Slack Incoming Webhook
+  - [x] Slack Enterprise channel (bot token + channel ID)
 
 ## Get started
 
